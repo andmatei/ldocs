@@ -1,0 +1,63 @@
+{
+  "name": "ldocs",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.21.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server/main.ts",
+    "build": "vite build && tsc -p tsconfig.server.json",
+    "start": "node dist/server/server/main.js",
+    "mcp": "tsx src/agents/main.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test --pass-with-no-tests",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm format:check && pnpm build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andmatei/ldocs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andmatei/ldocs/issues"
+  },
+  "homepage": "https://github.com/andmatei/ldocs#readme",
+  "description": "A local-first document editor for human and coding-agent review workflows.",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@fastify/vite": "^10.0.0",
+    "@lexical/react": "^0.49.0",
+    "fastify": "^5.12.0",
+    "lexical": "^0.49.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "@vitejs/plugin-react": "^6.0.5",
+    "eslint": "^10.8.1",
+    "eslint-plugin-import-x": "^4.17.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.12",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.67.0",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  }
+}

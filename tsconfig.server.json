@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2025"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "rootDir": "src",
+    "outDir": "dist/server",
+    "sourceMap": true,
+    "noEmit": false
+  },
+  "include": [
+    "src/server",
+    "src/storage",
+    "src/agents",
+    "src/google",
+    "src/documents",
+    "src/comments"
+  ]
+}
