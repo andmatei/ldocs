@@ -9,6 +9,7 @@
     "build": "vite build && tsc -p tsconfig.server.json",
     "start": "node dist/server/server/main.js",
     "mcp": "tsx src/agents/main.ts",
+    "commitlint": "commitlint --verbose",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
     "test": "vitest run",
@@ -42,6 +43,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@types/node": "^24.13.3",

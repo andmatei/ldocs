@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 
-const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const eslint = new ESLint({
   cwd: projectRoot,
   overrideConfigFile: resolve(projectRoot, 'eslint.config.js'),
