@@ -6,7 +6,7 @@
     "moduleResolution": "NodeNext",
     "types": ["node"],
     "rootDir": "src",
-    "outDir": "dist/server",
+    "outDir": "dist",
     "sourceMap": true,
     "noEmit": false
   },

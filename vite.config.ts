@@ -1,9 +1,7 @@
+import viteFastifyBuild from '@fastify/vite/plugin';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [react()],
-  build: {
-    outDir: 'dist/client',
-  },
+  plugins: [viteFastifyBuild({ spa: true }), react()],
 });
