@@ -5,18 +5,20 @@
   "packageManager": "pnpm@11.21.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server/main.ts",
-    "build": "vite build && tsc -p tsconfig.server.json",
-    "start": "node dist/server/server/main.js",
+    "dev": "tsx watch src/server/main.ts --dev",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "pnpm clean && vite build && tsc -p tsconfig.server.json",
+    "start": "node dist/server/main.js",
     "mcp": "tsx src/agents/main.ts",
     "commitlint": "commitlint --verbose",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
     "test": "vitest run",
+    "test:runtime": "pnpm build && vitest run --config vitest.runtime.config.ts",
     "test:e2e": "playwright test --pass-with-no-tests",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm format:check && pnpm build"
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm format:check && pnpm test:runtime"
   },
   "repository": {
     "type": "git",
