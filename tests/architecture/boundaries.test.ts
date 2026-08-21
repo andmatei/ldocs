@@ -71,6 +71,15 @@ describe('repository boundaries', () => {
     expect(ruleIds).toContain('no-restricted-imports');
   });
 
+  it('rejects application imports from server modules', async () => {
+    const ruleIds = await lintRuleIds(
+      "import '../app/main.js';\n",
+      'src/server/node-boundary.fixture.ts',
+    );
+
+    expect(ruleIds).toContain('no-restricted-imports');
+  });
+
   it('rejects Lexical from document contracts', async () => {
     const ruleIds = await lintRuleIds(
       "import { createEditor } from 'lexical';\nvoid createEditor;\n",

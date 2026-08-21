@@ -4,7 +4,4 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [viteFastifyBuild({ spa: true }), react()],
-  build: {
-    outDir: 'dist',
-  },
 });
