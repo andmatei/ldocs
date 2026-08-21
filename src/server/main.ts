@@ -1,8 +1,24 @@
 import type { FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
 
-import { createApp } from './app.js';
+import { buildServer } from './app.js';
 import { readRuntimeConfig } from './config.js';
+
+interface RuntimeReadyMessage {
+  address: string;
+  type: 'ldocs:ready';
+}
+
+function notifyParentProcess(address: string): void {
+  if (process.send) {
+    const message: RuntimeReadyMessage = {
+      address,
+      type: 'ldocs:ready',
+    };
+
+    process.send(message);
+  }
+}
 
 function registerShutdownHandlers(app: FastifyInstance): void {
   let shutdown: Promise<void> | undefined;
@@ -48,7 +64,7 @@ async function main(): Promise<void> {
 
   try {
     const config = readRuntimeConfig();
-    app = await createApp({
+    app = await buildServer({
       mode: config.mode,
       projectRoot: config.projectRoot,
       logger: true,
@@ -60,6 +76,7 @@ async function main(): Promise<void> {
     });
 
     registerShutdownHandlers(app);
+    notifyParentProcess(address);
     app.log.info({ address }, 'ldocs is ready');
   } catch (error) {
     const message = describeStartupError(error);

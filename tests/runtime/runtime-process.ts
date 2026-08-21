@@ -17,14 +17,22 @@ interface CloseResult {
   signal: NodeJS.Signals | null;
 }
 
-const runtimePorts: Record<RuntimeMode, number> = {
-  development: 43_112,
-  production: 43_113,
-};
+interface RuntimeReadyMessage {
+  address: string;
+  type: 'ldocs:ready';
+}
+
+function isRuntimeReadyMessage(message: unknown): message is RuntimeReadyMessage {
+  if (typeof message !== 'object' || message === null) {
+    return false;
+  }
+
+  const candidate = message as Partial<RuntimeReadyMessage>;
+
+  return candidate.type === 'ldocs:ready' && typeof candidate.address === 'string';
+}
 
 export async function startRuntime(mode: RuntimeMode): Promise<RunningRuntime> {
-  const port = runtimePorts[mode];
-  const origin = `http://127.0.0.1:${port}`;
   const args = [runtimeEntry];
 
   if (mode === 'development') {
@@ -35,13 +43,18 @@ export async function startRuntime(mode: RuntimeMode): Promise<RunningRuntime> {
     cwd: projectRoot,
     env: {
       ...process.env,
-      LDOCS_PORT: String(port),
+      LDOCS_PORT: '0',
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
   let output = '';
   let spawnError: Error | undefined;
   let closeResult: CloseResult | undefined;
+
+  if (!child.stdout || !child.stderr) {
+    child.kill();
+    throw new Error('ldocs runtime was started without output pipes');
+  }
 
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
@@ -63,71 +76,92 @@ export async function startRuntime(mode: RuntimeMode): Promise<RunningRuntime> {
     });
   });
 
-  const startupDeadline = Date.now() + 10_000;
-
-  while (Date.now() < startupDeadline) {
-    if (spawnError) {
-      throw new Error(`Could not start ldocs: ${spawnError.message}`);
-    }
-
-    if (closeResult) {
-      throw new Error(`ldocs exited during startup\n${output.trim()}`);
-    }
-
-    try {
-      const response = await fetch(`${origin}/api/v1/bootstrap`, {
-        headers: {
-          connection: 'close',
-        },
-        signal: AbortSignal.timeout(500),
-      });
-
-      await response.arrayBuffer();
-
-      if (response.ok) {
-        return {
-          origin,
-          async stop() {
-            if (closeResult) {
-              if (closeResult.code !== 0) {
-                throw new Error(`ldocs exited unexpectedly\n${output.trim()}`);
-              }
-
-              return;
-            }
-
-            child.kill('SIGTERM');
-
-            const result = await Promise.race([
-              closed.then((value) => ({
-                closed: true as const,
-                value,
-              })),
-              delay(5_000).then(() => ({
-                closed: false as const,
-              })),
-            ]);
-
-            if (!result.closed) {
-              child.kill('SIGKILL');
-              await closed;
-              throw new Error(`ldocs did not stop after SIGTERM\n${output.trim()}`);
-            }
-
-            if (result.value.code !== 0) {
-              throw new Error(`ldocs stopped unsuccessfully\n${output.trim()}`);
-            }
-          },
-        };
+  const ready = new Promise<string>((resolveReady) => {
+    const handleMessage = (message: unknown): void => {
+      if (isRuntimeReadyMessage(message)) {
+        child.off('message', handleMessage);
+        resolveReady(message.address);
       }
-    } catch {
-      // The server may not be listening yet.
-    }
+    };
 
-    await delay(50);
+    child.on('message', handleMessage);
+  });
+
+  const startup = await Promise.race([
+    ready.then((address) => ({
+      address,
+      status: 'ready' as const,
+    })),
+    closed.then(() => ({
+      status: 'closed' as const,
+    })),
+    delay(10_000).then(() => ({
+      status: 'timeout' as const,
+    })),
+  ]);
+
+  if (spawnError) {
+    throw new Error(`Could not start ldocs: ${spawnError.message}`);
   }
 
-  child.kill('SIGKILL');
-  await closed;
-  throw new Error(`ldocs did not start within 10 seconds\n${output.trim()}`);
+  if (startup.status !== 'ready') {
+    if (!closeResult) {
+      child.kill('SIGKILL');
+      await closed;
+    }
+
+    const reason = startup.status === 'closed' ? 'exited during startup' : 'did not start in time';
+    throw new Error(`ldocs ${reason}\n${output.trim()}`);
+  }
+
+  const origin = new URL(startup.address).origin;
+  const response = await fetch(`${origin}/api/v1/bootstrap`, {
+    headers: {
+      connection: 'close',
+    },
+    signal: AbortSignal.timeout(1_000),
+  });
+
+  await response.arrayBuffer();
+
+  if (!response.ok) {
+    child.kill('SIGKILL');
+    await closed;
+    throw new Error(`ldocs readiness check failed with ${response.status}\n${output.trim()}`);
+  }
+
+  return {
+    origin,
+    async stop() {
+      if (closeResult) {
+        if (closeResult.code !== 0) {
+          throw new Error(`ldocs exited unexpectedly\n${output.trim()}`);
+        }
+
+        return;
+      }
+
+      child.kill('SIGTERM');
+
+      const result = await Promise.race([
+        closed.then((value) => ({
+          closed: true as const,
+          value,
+        })),
+        delay(5_000).then(() => ({
+          closed: false as const,
+        })),
+      ]);
+
+      if (!result.closed) {
+        child.kill('SIGKILL');
+        await closed;
+        throw new Error(`ldocs did not stop after SIGTERM\n${output.trim()}`);
+      }
+
+      if (result.value.code !== 0) {
+        throw new Error(`ldocs stopped unsuccessfully\n${output.trim()}`);
+      }
+    },
+  };
 }

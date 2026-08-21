@@ -4,13 +4,13 @@ import type { RuntimeMode } from './config.js';
 import { registerFrontend } from './frontend.js';
 import { apiPlugin } from './plugins/api.js';
 
-export interface CreateAppOptions {
+export interface BuildServerOptions {
   logger?: FastifyServerOptions['logger'];
   mode: RuntimeMode;
   projectRoot: string;
 }
 
-export async function createApp(options: CreateAppOptions): Promise<FastifyInstance> {
+export async function buildServer(options: BuildServerOptions): Promise<FastifyInstance> {
   const app = Fastify({
     logger: options.logger ?? false,
   });
