@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { type RunningRuntime, startRuntime } from './runtime-process.js';
+import { type RunningRuntime, startRuntime } from '../helpers/runtime.js';
 
 describe('production runtime', () => {
   let runtime: RunningRuntime | undefined;

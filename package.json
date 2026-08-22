@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
     "test": "vitest run",
     "test:runtime": "pnpm build && vitest run --config vitest.runtime.config.ts",
-    "test:e2e": "playwright test --pass-with-no-tests",
+    "test:e2e": "pnpm build && playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm format:check && pnpm test:runtime"

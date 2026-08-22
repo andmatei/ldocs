@@ -16,6 +16,7 @@ Requirements:
 
 ```bash
 pnpm install
+pnpm exec playwright install chromium
 pnpm dev
 ```
 
@@ -35,9 +36,14 @@ pnpm build         # Build the browser and server applications
 pnpm start         # Run the production build
 pnpm test          # Run unit and architecture tests
 pnpm test:runtime  # Build and smoke-test development and production
-pnpm verify        # Run the complete CI check
+pnpm test:e2e      # Build and run the Chromium browser smoke suite
+pnpm verify        # Run the core lint, type, test, format, and build gate
 ```
 
 Fastify owns the HTTP server in both development and production. Vite runs as
 middleware during development, and the production build is served from the same
 origin.
+
+Runtime and browser tests start isolated ldocs processes on operating-system
+assigned loopback ports and stop them after the suite. The application does not
+open a document library yet, so these tests cannot access user document data.
