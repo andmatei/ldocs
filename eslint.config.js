@@ -5,13 +5,11 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 const sourceFiles = ['src/**/*.{ts,tsx}'];
-const browserFiles = ['src/app/**/*.{ts,tsx}', 'src/editor/**/*.{ts,tsx}'];
-const nodeFiles = [
-  'src/server/**/*.ts',
-  'src/storage/**/*.ts',
-  'src/agents/**/*.ts',
-  'src/google/**/*.ts',
-];
+const clientFiles = ['src/client/**/*.{ts,tsx}'];
+const clientEditorFiles = ['src/client/editor/**/*.{ts,tsx}'];
+const domainFiles = ['src/domain/**/*.{ts,tsx}'];
+const serverFiles = ['src/server/**/*.{ts,tsx}'];
+const adapterFiles = ['src/adapters/**/*.{ts,tsx}'];
 
 export default tseslint.config(
   {
@@ -40,7 +38,7 @@ export default tseslint.config(
     },
   },
   {
-    files: browserFiles,
+    files: clientFiles,
     languageOptions: {
       globals: globals.browser,
     },
@@ -49,16 +47,17 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/app/**/*.{ts,tsx}'],
+    files: clientFiles,
+    ignores: clientEditorFiles,
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              regex: '^(lexical$|@lexical/)|(^|/)(server|storage|agents|google)(/|$)',
+              regex: '^(lexical$|@lexical/)|(^|/)(server|adapters)(/|$)',
               message:
-                'Application modules must access Lexical through editor adapters and server capabilities through the HTTP API.',
+                'Client features must access Lexical through the client editor adapter and server capabilities through HTTP.',
             },
           ],
         },
@@ -66,15 +65,15 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/editor/**/*.{ts,tsx}'],
+    files: clientEditorFiles,
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              regex: '(^|/)(server|storage|agents|google)(/|$)',
-              message: 'Editor modules cannot depend on Node-side modules.',
+              regex: '(^|/)(server|adapters)(/|$)',
+              message: 'Client editor modules cannot depend on server or adapter modules.',
             },
           ],
         },
@@ -82,7 +81,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/documents/**/*.ts', 'src/comments/**/*.ts'],
+    files: domainFiles,
     plugins: {
       'import-x': importX,
     },
@@ -93,9 +92,10 @@ export default tseslint.config(
         {
           patterns: [
             {
-              regex: '^(react($|/)|react-dom($|/)|lexical$|@lexical/)|(^|/)editor(/|$)',
+              regex:
+                '^(react($|/)|react-dom($|/)|lexical$|@lexical/)|(^|/)(client|server|adapters)(/|$)',
               message:
-                'Document and comment contracts must remain independent of React, Lexical, and editor runtime classes.',
+                'Domain modules must remain independent of client, server, adapter, React, and Lexical runtime code.',
             },
           ],
         },
@@ -103,18 +103,38 @@ export default tseslint.config(
     },
   },
   {
-    files: nodeFiles,
+    files: [...serverFiles, ...adapterFiles],
     languageOptions: {
       globals: globals.node,
     },
+  },
+  {
+    files: serverFiles,
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              regex: '^(react($|/)|react-dom($|/)|lexical$|@lexical/)|(^|/)(app|editor)(/|$)',
-              message: 'Node-side modules cannot depend on React or the Lexical editor runtime.',
+              regex: '^(react($|/)|react-dom($|/)|lexical$|@lexical/)|(^|/)client(/|$)',
+              message: 'Server modules cannot depend on client, React, or Lexical runtime code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: adapterFiles,
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^(react($|/)|react-dom($|/)|lexical$|@lexical/)|(^|/)(client|server)(/|$)',
+              message:
+                'Adapter modules may depend on domain contracts but not client, server, React, or Lexical runtime code.',
             },
           ],
         },

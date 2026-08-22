@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { apiPlugin } from '../../src/server/plugins/api.js';
+import { apiPlugin } from '../../src/server/api/plugin.js';
 
 describe('API plugin', () => {
   let app: FastifyInstance | undefined;
