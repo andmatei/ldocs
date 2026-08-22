@@ -47,3 +47,19 @@ origin.
 Runtime and browser tests start isolated ldocs processes on operating-system
 assigned loopback ports and stop them after the suite. The application does not
 open a document library yet, so these tests cannot access user document data.
+
+## Source boundaries
+
+The repository is organized by runtime and dependency boundary:
+
+```text
+src/
+├── domain/    # Pure product contracts and rules
+├── client/    # React application, feature UI, Lexical adapter, HTTP client
+├── server/    # Fastify runtime, API routes, sessions, and services
+└── adapters/  # Filesystem storage, Google, and MCP integrations
+```
+
+Directories are added only when they contain real code. Client, server, and
+adapter modules may depend on domain contracts; domain modules do not depend on
+runtime or integration code.

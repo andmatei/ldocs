@@ -8,5 +8,5 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src/app", "src/editor", "src/documents", "src/comments"]
+  "include": ["src/client", "src/domain"]
 }

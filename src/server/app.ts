@@ -1,8 +1,8 @@
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 
+import { apiPlugin } from './api/plugin.js';
 import type { RuntimeMode } from './config.js';
 import { registerFrontend } from './frontend.js';
-import { apiPlugin } from './plugins/api.js';
 
 export interface BuildServerOptions {
   logger?: FastifyServerOptions['logger'];

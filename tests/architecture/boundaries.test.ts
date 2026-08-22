@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
@@ -10,16 +10,7 @@ const eslint = new ESLint({
   overrideConfigFile: resolve(projectRoot, 'eslint.config.js'),
 });
 
-const requiredDirectories = [
-  'app',
-  'editor',
-  'documents',
-  'comments',
-  'storage',
-  'server',
-  'agents',
-  'google',
-];
+const allowedSourceDirectories = new Set(['adapters', 'client', 'domain', 'server']);
 
 async function lintRuleIds(source: string, relativePath: string): Promise<(string | null)[]> {
   const [result] = await eslint.lintText(source, {
@@ -34,13 +25,22 @@ async function lintRuleIds(source: string, relativePath: string): Promise<(strin
 }
 
 describe('repository boundaries', () => {
-  it('contains every approved source directory', () => {
-    for (const directory of requiredDirectories) {
-      const path = resolve(projectRoot, 'src', directory);
+  it('uses only approved top-level source boundaries', () => {
+    const directories = readdirSync(resolve(projectRoot, 'src'), {
+      withFileTypes: true,
+    })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+    const files = readdirSync(resolve(projectRoot, 'src'), {
+      withFileTypes: true,
+    })
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name);
 
-      expect(existsSync(path), `Missing src/${directory}`).toBe(true);
-      expect(statSync(path).isDirectory(), `src/${directory} must be a directory`).toBe(true);
-    }
+    expect(directories).toEqual(expect.arrayContaining(['client', 'server']));
+    expect(directories.filter((directory) => !allowedSourceDirectories.has(directory))).toEqual([]);
+    expect(files).toEqual([]);
   });
 
   it('remains a single-package repository', () => {
@@ -53,55 +53,100 @@ describe('repository boundaries', () => {
     expect(pnpmWorkspace).not.toMatch(/^\s*packages:/m);
   });
 
-  it('rejects Node built-ins from browser modules', async () => {
+  it('rejects Node built-ins from client modules', async () => {
     const ruleIds = await lintRuleIds(
       "import { readFile } from 'node:fs';\nvoid readFile;\n",
-      'src/app/browser-boundary.fixture.ts',
+      'src/client/browser-boundary.fixture.ts',
     );
 
     expect(ruleIds).toContain('import-x/no-nodejs-modules');
   });
 
-  it('rejects server imports from browser modules', async () => {
+  it('rejects server imports from client modules', async () => {
     const ruleIds = await lintRuleIds(
       "import '../server/main.js';\n",
-      'src/app/browser-boundary.fixture.ts',
+      'src/client/browser-boundary.fixture.ts',
     );
 
     expect(ruleIds).toContain('no-restricted-imports');
   });
 
-  it('rejects application imports from server modules', async () => {
+  it('rejects adapter imports from client modules', async () => {
     const ruleIds = await lintRuleIds(
-      "import '../app/main.js';\n",
+      "import '../adapters/storage/index.js';\n",
+      'src/client/browser-boundary.fixture.ts',
+    );
+
+    expect(ruleIds).toContain('no-restricted-imports');
+  });
+
+  it('keeps Lexical behind the client editor boundary', async () => {
+    const ruleIds = await lintRuleIds(
+      "import { createEditor } from 'lexical';\ncreateEditor();\n",
+      'src/client/documents/lexical-boundary.fixture.ts',
+    );
+
+    expect(ruleIds).toContain('no-restricted-imports');
+  });
+
+  it('rejects client imports from server modules', async () => {
+    const ruleIds = await lintRuleIds(
+      "import '../client/main.js';\n",
       'src/server/node-boundary.fixture.ts',
     );
 
     expect(ruleIds).toContain('no-restricted-imports');
   });
 
-  it('rejects Lexical from document contracts', async () => {
+  it('rejects Lexical from domain modules', async () => {
     const ruleIds = await lintRuleIds(
       "import { createEditor } from 'lexical';\nvoid createEditor;\n",
-      'src/documents/lexical-boundary.fixture.ts',
+      'src/domain/documents/lexical-boundary.fixture.ts',
     );
 
     expect(ruleIds).toContain('no-restricted-imports');
   });
 
-  it('rejects React from comment contracts', async () => {
+  it('rejects Node built-ins from domain modules', async () => {
+    const ruleIds = await lintRuleIds(
+      "import { readFile } from 'node:fs';\nvoid readFile;\n",
+      'src/domain/documents/node-boundary.fixture.ts',
+    );
+
+    expect(ruleIds).toContain('import-x/no-nodejs-modules');
+  });
+
+  it('rejects client imports from domain modules', async () => {
+    const ruleIds = await lintRuleIds(
+      "import '../../client/main.js';\n",
+      'src/domain/documents/client-boundary.fixture.ts',
+    );
+
+    expect(ruleIds).toContain('no-restricted-imports');
+  });
+
+  it('rejects React from domain modules', async () => {
     const ruleIds = await lintRuleIds(
       "import { createElement } from 'react';\nvoid createElement;\n",
-      'src/comments/react-boundary.fixture.ts',
+      'src/domain/comments/react-boundary.fixture.ts',
     );
 
     expect(ruleIds).toContain('no-restricted-imports');
   });
 
-  it('allows Lexical inside the editor boundary', async () => {
+  it('rejects server imports from adapter modules', async () => {
+    const ruleIds = await lintRuleIds(
+      "import '../../server/main.js';\n",
+      'src/adapters/storage/server-boundary.fixture.ts',
+    );
+
+    expect(ruleIds).toContain('no-restricted-imports');
+  });
+
+  it('allows Lexical inside the client editor boundary', async () => {
     const ruleIds = await lintRuleIds(
       "import { createEditor } from 'lexical';\ncreateEditor();\n",
-      'src/editor/allowed-boundary.fixture.ts',
+      'src/client/editor/allowed-boundary.fixture.ts',
     );
 
     expect(ruleIds).not.toContain('no-restricted-imports');

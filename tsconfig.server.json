@@ -10,12 +10,5 @@
     "sourceMap": true,
     "noEmit": false
   },
-  "include": [
-    "src/server",
-    "src/storage",
-    "src/agents",
-    "src/google",
-    "src/documents",
-    "src/comments"
-  ]
+  "include": ["src/server", "src/adapters", "src/domain"]
 }

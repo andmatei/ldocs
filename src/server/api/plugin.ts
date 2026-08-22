@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 
-import { registerBootstrapRoute } from '../routes/bootstrap.js';
+import { registerBootstrapRoute } from './routes/bootstrap.js';
 
 export const apiPlugin: FastifyPluginAsync = async (app) => {
   registerBootstrapRoute(app);
