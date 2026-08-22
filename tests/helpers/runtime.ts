@@ -12,6 +12,10 @@ export interface RunningRuntime {
   stop(): Promise<void>;
 }
 
+export interface StartRuntimeOptions {
+  environment?: NodeJS.ProcessEnv;
+}
+
 interface CloseResult {
   code: number | null;
   signal: NodeJS.Signals | null;
@@ -32,7 +36,10 @@ function isRuntimeReadyMessage(message: unknown): message is RuntimeReadyMessage
   return candidate.type === 'ldocs:ready' && typeof candidate.address === 'string';
 }
 
-export async function startRuntime(mode: RuntimeMode): Promise<RunningRuntime> {
+export async function startRuntime(
+  mode: RuntimeMode,
+  options: StartRuntimeOptions = {},
+): Promise<RunningRuntime> {
   const args = [runtimeEntry];
 
   if (mode === 'development') {
@@ -43,6 +50,7 @@ export async function startRuntime(mode: RuntimeMode): Promise<RunningRuntime> {
     cwd: projectRoot,
     env: {
       ...process.env,
+      ...options.environment,
       LDOCS_PORT: '0',
     },
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
