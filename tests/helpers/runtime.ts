@@ -13,7 +13,11 @@ export interface RunningRuntime {
 }
 
 export interface StartRuntimeOptions {
-  environment?: NodeJS.ProcessEnv;
+  /**
+   * Additional child-process environment values. Tests always override
+   * LDOCS_PORT with `0` so the operating system assigns an available port.
+   */
+  environmentOverrides?: NodeJS.ProcessEnv;
 }
 
 interface CloseResult {
@@ -50,7 +54,7 @@ export async function startRuntime(
     cwd: projectRoot,
     env: {
       ...process.env,
-      ...options.environment,
+      ...options.environmentOverrides,
       LDOCS_PORT: '0',
     },
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'],

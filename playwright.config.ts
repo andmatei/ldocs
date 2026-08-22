@@ -4,9 +4,9 @@ const isContinuousIntegration = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: 'tests/e2e',
-  fullyParallel: true,
+  fullyParallel: !isContinuousIntegration,
   forbidOnly: isContinuousIntegration,
-  reporter: isContinuousIntegration ? 'line' : 'list',
+  reporter: isContinuousIntegration ? 'line' : [['list'], ['html', { open: 'never' }]],
   retries: isContinuousIntegration ? 2 : 0,
   timeout: 15_000,
   use: {
